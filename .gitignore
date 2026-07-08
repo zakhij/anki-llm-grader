@@ -1,0 +1,5 @@
+.DS_Store
+__pycache__/
+*.pyc
+*.apkg
+french_llm_grader/user_files/
