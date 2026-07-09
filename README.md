@@ -47,8 +47,16 @@ don't run on AnkiDroid/AnkiMobile; cards behave normally there.
 ## Setup
 
 1. Tools → Add-ons → **LLM Answer Grader** → Config.
-2. Set `api_key` to your Anthropic API key
-   ([console.anthropic.com](https://console.anthropic.com)).
+2. Pick a **provider** and set your `api_key`:
+
+   | Provider | Config | Notes |
+   |---|---|---|
+   | Claude *(default, best grading)* | `"provider": "anthropic"` + [Anthropic key](https://console.anthropic.com) | Structured outputs + adaptive thinking |
+   | OpenAI | `"provider": "openai_compatible"` + OpenAI key | default `openai_base_url` |
+   | OpenRouter / Groq / Gemini-compat | `"provider": "openai_compatible"` + their key | set `openai_base_url` accordingly |
+   | **Ollama / LM Studio (local, private)** | `"provider": "openai_compatible"`, no key | `openai_base_url`: `http://localhost:11434/v1` (Ollama) — card content never leaves your machine |
+
+   Set `model` to match (e.g. `claude-opus-4-8`, `gpt-5`, `llama3.1`).
 3. Edit the example **profile** to target your cards:
 
 ```jsonc
@@ -75,9 +83,13 @@ so the add-on bridges through Python:
 1. A `card_will_show` hook appends the input widget to matching cards.
 2. On submit, the widget calls `pycmd(...)` → the add-on's Python handler
    collects your answer + the card's fields.
-3. A background thread (Anki's `taskman`) POSTs to the Claude Messages API —
-   structured outputs guarantee a parseable grading JSON; adaptive thinking
-   lets the model reason harder on hard answers. The UI never blocks.
+3. A background thread (Anki's `taskman`) POSTs to your provider. On Claude,
+   structured outputs guarantee parseable grading JSON and adaptive thinking
+   lets the model reason harder on hard answers. On OpenAI-compatible
+   servers the add-on negotiates capabilities automatically (strict
+   `json_schema` → `json_object` → prompt-enforced JSON with tolerant
+   parsing), so it works from GPT-5 down to a small local model. The UI
+   never blocks.
 4. The result is pushed back with `web.eval(...)` and rendered. Widget state
    lives in a persistent JS object, so your text and feedback survive the
    question→answer flip.

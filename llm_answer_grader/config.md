@@ -4,17 +4,25 @@
 `note_type_prefixes` matches your note types, and describe your grading task
 in `grading_instructions`. Changes apply on the next card — no restart needed.
 
-#### Connection
+#### Provider & connection
 
-- **api_key**: Your Anthropic API key (`sk-ant-...`). Get one at
-  console.anthropic.com. If empty, the `ANTHROPIC_API_KEY` environment
-  variable is used as a fallback. The key never leaves your machine except to
-  call the Anthropic API.
-- **model**: Claude model used for grading. Default `claude-opus-4-8`.
+- **provider**: `"anthropic"` (default — Claude, best grading quality) or
+  `"openai_compatible"` (any /chat/completions server: OpenAI, OpenRouter,
+  Groq, Gemini's compatibility endpoint, or local Ollama / LM Studio).
+- **api_key**: Your API key for the chosen provider. If empty, the
+  `ANTHROPIC_API_KEY` (or `OPENAI_API_KEY`) environment variable is used.
+  Local servers like Ollama need no key — leave it empty. The key never
+  leaves your machine except to call your chosen provider.
+- **model**: Model name, e.g. `claude-opus-4-8`, `gpt-5`, `llama3.1`.
+- **openai_base_url**: Only used with `openai_compatible`. Examples:
+  - OpenAI: `https://api.openai.com/v1` (default)
+  - OpenRouter: `https://openrouter.ai/api/v1`
+  - Ollama (local): `http://localhost:11434/v1`
+  - LM Studio (local): `http://localhost:1234/v1`
 - **max_tokens**: Response budget for the grading call.
 - **request_timeout_seconds**: How long to wait for the API before giving up.
-- **adaptive_thinking**: Let Claude decide how much to reason before grading.
-  Slightly slower on hard cards, better feedback. Set `false` for max speed.
+- **adaptive_thinking**: Anthropic only — let Claude decide how much to
+  reason before grading. Slightly slower on hard cards, better feedback.
 
 #### Profiles — which cards get the grader, and how they're graded
 
@@ -47,7 +55,9 @@ catch-alls.
 
 #### Privacy & cost
 
-Card fields of matched cards and your typed answers are sent to the Anthropic
-API for grading — nothing else, and nothing is sent for cards without a
-matching profile. Attempt history is stored locally in the add-on's
-`user_files/history.json`. Each grading typically costs a fraction of a cent.
+Card fields of matched cards and your typed answers are sent to your chosen
+provider for grading — nothing else, and nothing is sent for cards without a
+matching profile. With a local server (Ollama/LM Studio) nothing leaves your
+machine at all. Attempt history is stored locally in the add-on's
+`user_files/history.json`. Cloud grading typically costs a fraction of a cent
+per card.

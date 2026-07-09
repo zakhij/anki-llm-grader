@@ -179,6 +179,21 @@ standard license for distributed add-ons. Distribution artifact is a
 `.ankiaddon` zip (folder *contents*, no `meta.json`/`user_files`/pycache)
 attached to a GitHub release — the same file AnkiWeb's upload form takes.
 
+### D15. Multi-provider via a single OpenAI-compatible adapter (v0.3)
+Rather than N provider integrations, v0.3 adds exactly one:
+`"provider": "openai_compatible"` + `openai_base_url`, covering OpenAI,
+OpenRouter, Groq, Gemini's compat endpoint, and local Ollama / LM Studio
+(keyless operation supported — the privacy option). Claude stays the default
+and quality benchmark. Robustness for heterogeneous servers is handled by
+**capability negotiation** (on 400: strict `json_schema` → `json_object` →
+no response_format, and `max_tokens` → `max_completion_tokens`), a
+belt-and-braces JSON instruction in the system prompt, fence/prose-tolerant
+parsing, and **normalization** of sloppy gradings (derive missing
+verdict/rating from score and vice versa, clamp score, coerce lists) so even
+small local models produce usable feedback. The provider seam is
+`grade(config, profile, fields, attempt) → normalized grading dict` —
+everything above it (bridge, UI, history) is provider-agnostic.
+
 ---
 
 ## 3. Architecture
