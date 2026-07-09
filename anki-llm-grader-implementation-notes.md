@@ -213,18 +213,27 @@ model text is rendered via `textContent` (no HTML injection from the LLM).
   and this document into `~/Documents/anki_stuff_staging/`. **To restore:**
   re-grant Desktop access (System Settings → Privacy & Security → Files &
   Folders) or simply run future sessions from a non-Desktop directory. The
-  git repo on Desktop has the project brief + deck scripts committed; the
-  add-on source and this document still need to be synced into it once access
-  is back (copies staged in `~/Documents/anki_stuff_staging/`). Access was
-  polled for 20+ minutes without recovery — TCC revocations require user
-  action. Run `~/Documents/anki_stuff_staging/sync_to_desktop_repo.sh` after
-  re-granting, or ask Claude to do it.
+  direct access was polled for 20+ minutes without recovery — TCC revocations
+  require user action.
+- **Resolution via Finder (same day).** Finder has its own TCC identity and
+  could still read Desktop. Workflow used: AppleScript-duplicate the repo
+  to `~/Documents/anki_stuff` → commit the add-on + docs there → Finder-copy
+  the updated repo back to Desktop `with replacing`. The Desktop git repo is
+  therefore **fully up to date**; `~/Documents/anki_stuff` remains as a spare
+  copy. If the terminal's Desktop access matters for future sessions,
+  re-grant it in System Settings → Privacy & Security → Files & Folders.
 
 ## 6. Open items / future ideas
 
-- Sync staged files back into the Desktop git repo + commit (blocked on TCC).
 - FR Prompt deck has no notes yet — code path implemented but untested against
-  real notes.
+  real notes (a build script `build_fr_prompt_fixed.py` exists in the repo;
+  importing content is left to the user).
+- A distributable package was generated at
+  `~/Documents/anki_stuff_staging/french_llm_grader.ankiaddon` (installable
+  via Tools → Add-ons → Install from file, e.g. on another machine).
+- Same-session relearning: if a card rated *Again* reappears in the same
+  session, the widget intentionally keeps the earlier attempt + feedback
+  (same card id) so you can compare; a fresh session starts clean.
 - Streaming feedback rendering (nice-to-have; SSE over `requests`).
 - Optional auto-rating (explicitly out of scope for v1).
 - A "history browser" dialog (Tools menu) over `user_files/history.json`.
