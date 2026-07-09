@@ -204,6 +204,35 @@ localized Anki UIs and button-relabeling add-ons show different text. New
 suggestion text with their UI; the underlying keys stay canonical in the
 schema, history file, and prompt.
 
+### D17. Production hardening (v0.4)
+`on_card_will_show` and the pycmd handler now **fail open**: any exception
+(usually a malformed user config) logs a traceback, shows a one-time tooltip,
+and renders the card untouched — a broken config can never break reviews.
+A **first-run dialog** (marker in `user_files/`) offers to open settings when
+neither an API key nor an active profile exists. The widget **releases
+keyboard focus** when feedback arrives so Anki's rating shortcuts work
+immediately. Multi-template note types now pass the **card template name** to
+the grader for disambiguation.
+
+### D18. Follow-up questions (v0.4)
+After a grading, a small input lets the learner ask one grounded question
+("why is « une café » wrong?"). Python keeps the last 10 gradings' context
+(profile, fields, attempt, grading) keyed by card id; `grader.follow_up()`
+sends persona + original card context + the grading + the question and
+returns plain text (no structured output). Deliberately one-shot — not a
+chat — to stay a grader, not a tutor product.
+
+### D19. Native settings dialog (v0.4)
+`settings.py` adds a Qt dialog (Tools → LLM Answer Grader Settings…, also
+wired to the add-on screen's Config button via `setConfigAction`): provider
+dropdown, key/model/base-URL fields, and a profile editor with **note-type
+checkboxes populated from the user's collection**, prefix free-text for
+power users, **field checkboxes** from the matched note types, and a
+per-profile model-override group. Typing exact note-type/field names into
+JSON was the most error-prone setup step; pickers eliminate it. The dialog
+only manages the keys it shows — everything else (prompts, labels) survives
+untouched; "Edit raw JSON…" remains for full control.
+
 ---
 
 ## 3. Architecture
@@ -271,6 +300,22 @@ model text is rendered via `textContent` (no HTML injection from the LLM).
   `meta.json`, widget injected on `FR Translate++`, bridge round-trip, state
   preserved across flip
 - ✅ `.ankiaddon` package built (7 files, no local state inside)
+
+**v0.4 test pass:**
+- ✅ Unit: `effective_config` override precedence (empty overrides ignored),
+  per-profile provider dispatch (global Claude → profile Ollama URL),
+  template threading, `follow_up` request shape (plain text, no
+  output_config, question + grading grounding), widget follow-up UI
+- ✅ **Real API**: graded call (caught planted gender error, 75/100) and real
+  follow-up answer (correct masculine-noun explanation), via the merged
+  local config
+- ✅ Settings dialog offscreen round-trip (stubbed `mw` + QT_QPA_PLATFORM=
+  offscreen): profiles load, correct note-type/field boxes checked,
+  per-profile override saved, unmanaged config keys preserved
+- ⚠️ In-Anki GUI verification of the menu item/first-run dialog deferred: the
+  user's live Anki session was running (launched 21:06) and was not killed to
+  test; the new code loads on their next restart. All code paths involved are
+  fail-open.
 
 ## 5. Incident log
 

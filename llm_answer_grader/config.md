@@ -1,5 +1,9 @@
 ### LLM Answer Grader configuration
 
+**Prefer the visual editor:** Tools → **LLM Answer Grader Settings…** gives
+you dropdowns and checkboxes for everything below (note types, fields,
+providers). This JSON view is the power-user path; both edit the same config.
+
 **Quick start:** set `api_key`, then edit the example profile so its
 `note_type_prefixes` matches your note types, and describe your grading task
 in `grading_instructions`. Changes apply on the next card — no restart needed.
@@ -42,6 +46,12 @@ Each entry in **profiles** targets some of your cards:
 
 The **first** matching profile wins, so put more specific prefixes before
 catch-alls.
+
+A profile may also override the global connection settings — useful for
+grading easy decks with a cheap/local model and hard decks with Claude. Any
+of `provider`, `model`, `api_key`, `openai_base_url`, `adaptive_thinking`,
+`max_tokens` set inside a profile wins over the global value for that
+profile's cards.
 
 #### Grading style
 

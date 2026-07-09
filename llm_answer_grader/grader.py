@@ -103,6 +103,29 @@ def _provider(config: Dict[str, Any]) -> str:
     return p
 
 
+# Connection settings a profile may override — e.g. a cheap local model for
+# easy decks and Claude for hard ones.
+PROFILE_OVERRIDE_KEYS = (
+    "provider",
+    "model",
+    "api_key",
+    "openai_base_url",
+    "adaptive_thinking",
+    "max_tokens",
+)
+
+
+def effective_config(
+    config: Dict[str, Any], profile: Optional[Dict[str, Any]]
+) -> Dict[str, Any]:
+    """Global config with the profile's override keys (if any) applied."""
+    merged = dict(config)
+    for key in PROFILE_OVERRIDE_KEYS:
+        if profile and profile.get(key) not in (None, ""):
+            merged[key] = profile[key]
+    return merged
+
+
 def _resolve_key(config: Dict[str, Any], provider: str) -> str:
     key = (config.get("api_key") or "").strip()
     if key:
@@ -131,7 +154,10 @@ def match_profile(
 
 
 def build_user_message(
-    profile: Dict[str, Any], fields: Dict[str, str], attempt: str
+    profile: Dict[str, Any],
+    fields: Dict[str, str],
+    attempt: str,
+    template: Optional[str] = None,
 ) -> str:
     instructions = (profile.get("grading_instructions") or "").strip() or (
         "Grade the learner's answer against the card content below."
@@ -142,6 +168,9 @@ def build_user_message(
         for name in include
         if name in fields and fields[name].strip()
     ]
+    if template:
+        # Disambiguates which card of a multi-card note type is being reviewed.
+        lines.append(f"(card template: {template})")
     card_block = "\n".join(lines) or "(no card fields)"
     return (
         f"{instructions}\n\n"
@@ -166,12 +195,107 @@ def grade(
     profile: Dict[str, Any],
     fields: Dict[str, str],
     attempt: str,
+    template: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Blocking LLM call. Returns the normalized grading dict."""
-    provider = _provider(config)
+    cfg = effective_config(config, profile)
+    provider = _provider(cfg)
     if provider == "openai_compatible":
-        return _grade_openai_compatible(config, profile, fields, attempt)
-    return _grade_anthropic(config, profile, fields, attempt)
+        return _grade_openai_compatible(cfg, profile, fields, attempt, template)
+    return _grade_anthropic(cfg, profile, fields, attempt, template)
+
+
+def follow_up(
+    config: Dict[str, Any],
+    profile: Dict[str, Any],
+    fields: Dict[str, str],
+    attempt: str,
+    grading: Dict[str, Any],
+    question: str,
+) -> str:
+    """One grounded clarification question about a grading. Returns plain text."""
+    cfg = effective_config(config, profile)
+    provider = _provider(cfg)
+    persona = (cfg.get("system_prompt") or "").strip() or DEFAULT_PERSONA
+    system = persona + (
+        "\n\nThe learner is asking a follow-up question about a grading you "
+        "just gave. Answer it directly and concisely (1-4 sentences, plain "
+        "text, no JSON, no markdown headers). If the question challenges the "
+        "grading and the learner is right, say so plainly."
+    )
+    grading_summary = json.dumps(
+        {k: grading.get(k) for k in
+         ("verdict", "score", "corrected_version", "feedback", "alternatives")},
+        ensure_ascii=False,
+    )
+    user_msg = (
+        build_user_message(profile, fields, attempt)
+        + f"\n\nYour grading was:\n{grading_summary}"
+        + f"\n\nLearner's follow-up question:\n{question}"
+    )
+    return _text_call(cfg, provider, system, user_msg)
+
+
+def _text_call(
+    config: Dict[str, Any], provider: str, system: str, user_msg: str
+) -> str:
+    """Plain-text (non-structured) call on either provider."""
+    if provider == "openai_compatible":
+        key = _resolve_key(config, provider)
+        base = (config.get("openai_base_url") or DEFAULT_OPENAI_BASE_URL).rstrip("/")
+        headers = {"content-type": "application/json"}
+        if key:
+            headers["Authorization"] = f"Bearer {key}"
+        body: Dict[str, Any] = {
+            "model": config.get("model") or "gpt-5",
+            "max_tokens": int(config.get("max_tokens") or 2000),
+            "messages": [
+                {"role": "system", "content": system},
+                {"role": "user", "content": user_msg},
+            ],
+        }
+        resp = _post(f"{base}/chat/completions", headers=headers, body=body, config=config)
+        if resp.status_code == 400 and "max_completion_tokens" in _error_detail(resp).lower():
+            body["max_completion_tokens"] = body.pop("max_tokens")
+            resp = _post(f"{base}/chat/completions", headers=headers, body=body, config=config)
+        if resp.status_code != 200:
+            raise GraderError(_http_error_message(resp))
+        try:
+            text = resp.json()["choices"][0]["message"]["content"] or ""
+        except (KeyError, IndexError, TypeError):
+            raise GraderError("The server returned an unexpected response shape.")
+    else:
+        key = _resolve_key(config, "anthropic")
+        body = {
+            "model": config.get("model") or DEFAULT_MODEL,
+            "max_tokens": int(config.get("max_tokens") or 2000),
+            "system": system,
+            "messages": [{"role": "user", "content": user_msg}],
+        }
+        if config.get("adaptive_thinking", True):
+            body["thinking"] = {"type": "adaptive"}
+        resp = _post(
+            ANTHROPIC_API_URL,
+            headers={
+                "x-api-key": key,
+                "anthropic-version": ANTHROPIC_VERSION,
+                "content-type": "application/json",
+            },
+            body=body,
+            config=config,
+        )
+        if resp.status_code != 200:
+            raise GraderError(_http_error_message(resp))
+        data = resp.json()
+        if data.get("stop_reason") == "refusal":
+            raise GraderError("The model declined to answer this question.")
+        text = "".join(
+            b.get("text", "") for b in data.get("content", []) if b.get("type") == "text"
+        )
+    text = text.strip()
+    if not text:
+        raise GraderError("The model returned an empty response. Try again.")
+    return text
 
 
 # --------------------------------------------------------------------------
@@ -183,13 +307,17 @@ def build_anthropic_request_body(
     profile: Dict[str, Any],
     fields: Dict[str, str],
     attempt: str,
+    template: Optional[str] = None,
 ) -> Dict[str, Any]:
     body: Dict[str, Any] = {
         "model": config.get("model") or DEFAULT_MODEL,
         "max_tokens": int(config.get("max_tokens") or 2000),
         "system": _build_system(config, "anthropic"),
         "messages": [
-            {"role": "user", "content": build_user_message(profile, fields, attempt)}
+            {
+                "role": "user",
+                "content": build_user_message(profile, fields, attempt, template),
+            }
         ],
         "output_config": {
             "format": {"type": "json_schema", "schema": GRADING_SCHEMA}
@@ -205,9 +333,10 @@ def _grade_anthropic(
     profile: Dict[str, Any],
     fields: Dict[str, str],
     attempt: str,
+    template: Optional[str] = None,
 ) -> Dict[str, Any]:
     key = _resolve_key(config, "anthropic")
-    body = build_anthropic_request_body(config, profile, fields, attempt)
+    body = build_anthropic_request_body(config, profile, fields, attempt, template)
     resp = _post(
         ANTHROPIC_API_URL,
         headers={
@@ -248,6 +377,7 @@ def _grade_openai_compatible(
     profile: Dict[str, Any],
     fields: Dict[str, str],
     attempt: str,
+    template: Optional[str] = None,
 ) -> Dict[str, Any]:
     key = _resolve_key(config, "openai_compatible")
     base = (config.get("openai_base_url") or DEFAULT_OPENAI_BASE_URL).rstrip("/")
@@ -264,7 +394,7 @@ def _grade_openai_compatible(
             {"role": "system", "content": _build_system(config, "openai_compatible")},
             {
                 "role": "user",
-                "content": build_user_message(profile, fields, attempt),
+                "content": build_user_message(profile, fields, attempt, template),
             },
         ],
     }

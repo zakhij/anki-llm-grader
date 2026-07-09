@@ -46,6 +46,11 @@ don't run on AnkiDroid/AnkiMobile; cards behave normally there.
 
 ## Setup
 
+Open **Tools → LLM Answer Grader Settings…** — a visual editor with note-type
+and field pickers (a first-run dialog offers this automatically). Pick your
+provider, paste your key, add a profile, done. The equivalent raw-JSON config
+is documented below and remains fully supported:
+
 1. Tools → Add-ons → **LLM Answer Grader** → Config.
 2. Pick a **provider** and set your `api_key`:
 
@@ -74,6 +79,11 @@ The input box appears only on cards matching a profile. First matching
 profile wins; `"*"` matches every note type. Grading style is tunable via
 `system_prompt_extra` (e.g. `"Ignore missing accents"`) — see the config
 screen for the full reference.
+
+Profiles can also **override the provider/model individually** — e.g. a free
+local model for easy decks, Claude for hard ones. And after any grading you
+can ask a **follow-up question** ("why is that wrong?") answered in the
+context of your attempt and the feedback.
 
 ## How it works
 

@@ -43,6 +43,13 @@ CSS = """
   color: #999; margin-bottom: 3px; }
 .lag-points ul, .lag-alts ul { margin: 4px 0 8px; padding-left: 20px; }
 .lag-points li, .lag-alts li { margin: 3px 0; line-height: 1.45; }
+.lag-fu { margin-top: 10px; }
+.lag-fu-row { display: flex; gap: 8px; }
+.lag-fu-input { flex: 1; font: inherit; font-size: 13.5px; padding: 6px 8px;
+  border: 1px solid #c8c8c8; border-radius: 6px; background: #fff; color: inherit; }
+.night_mode .lag-fu-input { background: #202024; border-color: #555; }
+.lag-fu-btn { padding: 6px 12px; }
+.lag-fu-answer { margin-bottom: 8px; font-size: 14px; line-height: 1.5; }
 """
 
 # The persistent client. Defined once per reviewer page; mount() is called on
@@ -77,7 +84,9 @@ JS = r"""
 
     reset: function (cardId) {
       this.state = { cardId: cardId, text: "", status: "idle",
-                     feedback: null, error: null, prev: null };
+                     feedback: null, error: null, prev: null,
+                     fuQuestion: "", fuAnswer: null, fuError: null,
+                     fuStatus: "idle" };
     },
 
     mount: function (cardId, prev, labels) {
@@ -106,6 +115,7 @@ JS = r"""
       s.feedback = data.grading;
       s.error = null;
       this.render();
+      this.unfocus();  // free the keyboard for Anki's rating shortcuts
     },
 
     showError: function (data) {
@@ -114,6 +124,35 @@ JS = r"""
       s.status = "idle";
       s.error = data.message;
       this.render();
+      this.unfocus();
+    },
+
+    askFollowUp: function () {
+      var s = this.state;
+      if (!s || !s.feedback) return;
+      var q = (s.fuQuestion || "").trim();
+      if (!q || s.fuStatus === "asking") return;
+      if (typeof pycmd === "undefined") return;
+      s.fuStatus = "asking";
+      s.fuAnswer = null;
+      s.fuError = null;
+      this.render();
+      pycmd("llm_grader:followup:" + JSON.stringify({ cardId: s.cardId, question: q }));
+    },
+
+    showFollowUp: function (data) {
+      var s = this.state;
+      if (!s || data.cardId !== s.cardId) return;
+      s.fuStatus = "idle";
+      if (data.error) { s.fuError = data.error; }
+      else { s.fuAnswer = data.answer; s.fuQuestion = ""; }
+      this.render();
+    },
+
+    unfocus: function () {
+      var root = document.getElementById("lag-root");
+      var active = document.activeElement;
+      if (root && active && root.contains(active)) active.blur();
     },
 
     render: function () {
@@ -163,9 +202,52 @@ JS = r"""
       box.appendChild(controls);
 
       if (s.error) box.appendChild(el("div", "lag-error", s.error));
-      if (s.feedback) box.appendChild(this.buildFeedback(s.feedback));
+      if (s.feedback) {
+        box.appendChild(this.buildFeedback(s.feedback));
+        box.appendChild(this.buildFollowUp());
+      }
 
       root.appendChild(box);
+    },
+
+    buildFollowUp: function () {
+      var s = this.state;
+      var self = this;
+      var wrap = el("div", "lag-fu");
+
+      if (s.fuAnswer) {
+        var ans = el("div", "lag-fu-answer");
+        ans.appendChild(el("span", "lag-label", "Answer"));
+        ans.appendChild(document.createTextNode(s.fuAnswer));
+        wrap.appendChild(ans);
+      }
+      if (s.fuError) wrap.appendChild(el("div", "lag-error", s.fuError));
+
+      var row = el("div", "lag-fu-row");
+      var input = el("input", "lag-fu-input");
+      input.type = "text";
+      input.placeholder = "Ask about this grading… (e.g. why is that wrong?)";
+      input.value = s.fuQuestion;
+      input.disabled = s.fuStatus === "asking";
+      input.addEventListener("input", function () { s.fuQuestion = input.value; });
+      ["keydown", "keyup", "keypress"].forEach(function (evt) {
+        input.addEventListener(evt, function (e) {
+          e.stopPropagation();
+          if (evt === "keydown" && e.key === "Enter") {
+            e.preventDefault();
+            self.askFollowUp();
+          }
+          if (evt === "keydown" && e.key === "Escape") input.blur();
+        });
+      });
+      row.appendChild(input);
+      var btn = el("button", "lag-btn lag-fu-btn",
+        s.fuStatus === "asking" ? "…" : "Ask");
+      btn.disabled = s.fuStatus === "asking";
+      btn.addEventListener("click", function () { self.askFollowUp(); });
+      row.appendChild(btn);
+      wrap.appendChild(row);
+      return wrap;
     },
 
     buildFeedback: function (g) {
