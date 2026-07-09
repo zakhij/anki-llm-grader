@@ -1,0 +1,11 @@
+{
+  "api_key": "",
+  "model": "claude-opus-4-8",
+  "max_tokens": 2000,
+  "request_timeout_seconds": 120,
+  "adaptive_thinking": true,
+  "translate_note_type_prefixes": ["FR Translate"],
+  "prompt_note_type_prefixes": ["FR Prompt"],
+  "show_previous_attempt": true,
+  "system_prompt_extra": ""
+}
