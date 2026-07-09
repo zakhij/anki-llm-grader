@@ -5,13 +5,16 @@
 
 ## Status
 
-**Working.** The add-on is installed at
-`~/Library/Application Support/Anki2/addons21/french_llm_grader/` and passed an
-automated in-Anki end-to-end test (widget injection → submit → bridge round
-trip → feedback rendering → state survives card flip). The one thing that
-could not be verified is a real graded response, because **no Anthropic API
-key exists on this machine** — add yours via Tools → Add-ons → French LLM
-Grader → Config, then review any FR Translate card.
+**Working, generalized, and release-packaged.** The add-on — now the generic
+**LLM Answer Grader** — is installed at
+`~/Library/Application Support/Anki2/addons21/llm_answer_grader/` and passed
+automated in-Anki end-to-end tests twice (original French version and the
+generalized version after the v0.2 refactor). The French-specific behavior is
+preserved via local user config (`meta.json`), so the FR decks work exactly as
+before. The one thing that could not be verified is a real graded response,
+because **no Anthropic API key exists on this machine** — add yours via
+Tools → Add-ons → LLM Answer Grader → Config, then review any FR Translate
+card. Repo: https://github.com/zakhij/anki-llm-grader (private).
 
 ## How to use
 
@@ -149,6 +152,33 @@ the agent's own Desktop access was also revoked by macOS (every process
 started returning EPERM for `~/Desktop` while Documents/Library stayed fine),
 which corroborates the TCC diagnosis.
 
+### D12. Generalization: "LLM Answer Grader" with config profiles (v0.2)
+For public release the French specifics moved out of code into config. A
+**profile** = `{name, note_type_prefixes, card_fields, grading_instructions}`;
+the first matching profile wins, `"*"` matches all note types, empty prefix
+list disables a profile. The per-mode prompt templates were replaced by one
+generic message shape: *instructions + "Card content:" (selected fields as
+`Name: value` lines) + "Learner's answer:"* — this covers translation, free
+writing, definitions, facts, anything, without a templating language. The
+grading persona is replaceable via `system_prompt`, but a fixed **output
+contract** (verdict/score/rating semantics) is always appended so the
+structured response stays meaningful regardless of persona.
+
+### D13. Backwards compatibility via `meta.json` user config
+Anki's `getConfig` does a shallow `defaults.update(user_config)` (verified in
+`aqt/addons.py`). The user's French tutor persona and the FR Prompt /
+FR Translate profiles were written into the installed add-on's `meta.json`
+`config` key — defaults stay neutral for the public package, while this
+machine keeps identical French grading behavior. FR Prompt is listed first to
+preserve the old precedence. Attempt history was migrated
+(`user_files/` moved from the old `french_llm_grader` dir).
+
+### D14. License and distribution
+**AGPL-3.0** — the add-on imports Anki's `aqt`, which is AGPL, so this is the
+standard license for distributed add-ons. Distribution artifact is a
+`.ankiaddon` zip (folder *contents*, no `meta.json`/`user_files`/pycache)
+attached to a GitHub release — the same file AnkiWeb's upload form takes.
+
 ---
 
 ## 3. Architecture
@@ -202,6 +232,17 @@ model text is rendered via `textContent` (no HTML injection from the LLM).
   machine). Everything up to and including the HTTP request is verified; the
   request body follows the documented Messages API shape (structured outputs
   + adaptive thinking).
+
+**Generalization (v0.2) test pass:**
+- ✅ Unit tests in Anki's venv: profile matching (FR Prompt precedence,
+  suffixed variants, `"*"` wildcard, no-match), field filtering + message
+  shape, persona override + output contract always present, mocked grade
+  round-trip, renamed widget internals (`LLMGrader`, `lag-*`, `llm_grader:`)
+- ✅ `getConfig` merge semantics verified against `aqt/addons.py` source
+- ✅ Second automated in-Anki E2E: French profiles + persona merged from
+  `meta.json`, widget injected on `FR Translate++`, bridge round-trip, state
+  preserved across flip
+- ✅ `.ankiaddon` package built (7 files, no local state inside)
 
 ## 5. Incident log
 

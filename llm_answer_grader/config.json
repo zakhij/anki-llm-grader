@@ -1,0 +1,18 @@
+{
+  "api_key": "",
+  "model": "claude-opus-4-8",
+  "max_tokens": 2000,
+  "request_timeout_seconds": 120,
+  "adaptive_thinking": true,
+  "show_previous_attempt": true,
+  "system_prompt": "",
+  "system_prompt_extra": "",
+  "profiles": [
+    {
+      "name": "Example (edit me)",
+      "note_type_prefixes": [],
+      "card_fields": [],
+      "grading_instructions": "The card shows a sentence in English (field 'Front') that the learner translates into Spanish. Grade for meaning, grammar and naturalness."
+    }
+  ]
+}

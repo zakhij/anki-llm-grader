@@ -1,6 +1,6 @@
-# French LLM Grader — inline Claude grading in the Anki reviewer.
-# Injects a text input on FR Translate / FR Prompt cards; submissions are
-# graded by the Claude API in a background thread and rendered on the card.
+# LLM Answer Grader — inline Claude grading in the Anki reviewer.
+# Injects a text input on cards matched by configured profiles; submissions
+# are graded by the Claude API in a background thread and rendered on the card.
 
 from __future__ import annotations
 
@@ -17,27 +17,22 @@ try:
 except ImportError:  # older naming
     from anki.utils import stripHTML as strip_html  # type: ignore
 
+PYCMD_PREFIX = "llm_grader:"
+
 
 def _config() -> Dict[str, Any]:
     return mw.addonManager.getConfig(__name__) or {}
 
 
-def _mode_for(card) -> Optional[str]:
-    cfg = _config()
+def _profile_for(card) -> Optional[Dict[str, Any]]:
     name = card.note().note_type()["name"]
-    for prefix in cfg.get("prompt_note_type_prefixes") or ["FR Prompt"]:
-        if name.startswith(prefix):
-            return "prompt"
-    for prefix in cfg.get("translate_note_type_prefixes") or ["FR Translate"]:
-        if name.startswith(prefix):
-            return "translate"
-    return None
+    return grader.match_profile(_config(), name)
 
 
 def on_card_will_show(text: str, card, kind: str) -> str:
     if kind not in ("reviewQuestion", "reviewAnswer"):
         return text
-    if _mode_for(card) is None:
+    if _profile_for(card) is None:
         return text
     prev = None
     if _config().get("show_previous_attempt", True):
@@ -46,7 +41,7 @@ def on_card_will_show(text: str, card, kind: str) -> str:
 
 
 def on_js_message(handled, message: str, context) -> Any:
-    if not message.startswith("french_grader:"):
+    if not message.startswith(PYCMD_PREFIX):
         return handled
     if not isinstance(context, Reviewer):
         return handled
@@ -65,8 +60,8 @@ def _handle_submit(payload: str) -> None:
     card = mw.reviewer.card
     if card is None or card.id != req.get("cardId"):
         return
-    mode = _mode_for(card)
-    if mode is None:
+    profile = _profile_for(card)
+    if profile is None:
         return
     attempt = (req.get("text") or "").strip()
     if not attempt:
@@ -78,7 +73,7 @@ def _handle_submit(payload: str) -> None:
     card_id, note_id = card.id, note.id
 
     def task() -> Dict[str, Any]:
-        return grader.grade(cfg, mode, fields, attempt)
+        return grader.grade(cfg, profile, fields, attempt)
 
     def on_done(fut) -> None:
         try:
@@ -104,7 +99,7 @@ def _eval_js(fn: str, obj: Dict[str, Any]) -> None:
     if rev is None or rev.card is None or rev.card.id != obj["cardId"]:
         return
     payload = json.dumps(obj, ensure_ascii=False).replace("</", "<\\/")
-    rev.web.eval(f"if (window.FrenchGrader) FrenchGrader.{fn}({payload});")
+    rev.web.eval(f"if (window.LLMGrader) LLMGrader.{fn}({payload});")
 
 
 gui_hooks.card_will_show.append(on_card_will_show)
