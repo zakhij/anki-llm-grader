@@ -38,7 +38,8 @@ CSS = """
 .lag-suggest { font-size: 12.5px; color: #777; border: 1px solid #ccc; border-radius: 999px; padding: 2px 9px; }
 .night_mode .lag-suggest { border-color: #555; color: #aaa; }
 .lag-corrected { margin: 10px 0 4px; font-size: 16px; line-height: 1.5; }
-.lag-corrected .lag-label, .lag-alts .lag-label, .lag-points .lag-label {
+.lag-corrected .lag-label, .lag-alts .lag-label, .lag-points .lag-label,
+.lag-fu-answer .lag-label {
   display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .07em;
   color: #999; margin-bottom: 3px; }
 .lag-points ul, .lag-alts ul { margin: 4px 0 8px; padding-left: 20px; }
