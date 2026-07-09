@@ -1,5 +1,7 @@
 # LLM Answer Grader — Anki add-on
 
+MY EXPERIMENT WITH CLAUDE FABLE!! THIS WAS ALL FABLE.
+
 Type your answer on a flashcard, get it graded by Claude, right inside the
 Anki reviewer. Built for language production practice (translations, free
 writing), but works for anything where "compare my answer to the card" needs
