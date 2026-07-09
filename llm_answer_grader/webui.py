@@ -50,6 +50,9 @@ CSS = """
 JS = r"""
 (function () {
   if (window.LLMGrader) return;
+  // Default display labels; overridable per-mount via config
+  // ("verdict_labels" / "rating_labels") for other languages or relabeled
+  // answer buttons. The four rating keys mirror Anki's fixed ease values 1-4.
   var VERDICTS = {
     correct: "Correct",
     minor_issues: "Minor issues",
@@ -57,6 +60,10 @@ JS = r"""
     incorrect: "Incorrect"
   };
   var RATINGS = { again: "Again", hard: "Hard", good: "Good", easy: "Easy" };
+
+  function label(table, overrides, key) {
+    return (overrides && overrides[key]) || table[key] || key;
+  }
 
   function el(tag, cls, text) {
     var e = document.createElement(tag);
@@ -73,9 +80,10 @@ JS = r"""
                      feedback: null, error: null, prev: null };
     },
 
-    mount: function (cardId, prev) {
+    mount: function (cardId, prev, labels) {
       if (!this.state || this.state.cardId !== cardId) this.reset(cardId);
       this.state.prev = prev;
+      this.labels = labels || {};
       this.render();
     },
 
@@ -120,7 +128,7 @@ JS = r"""
         var when = new Date(s.prev.ts * 1000).toLocaleDateString();
         box.appendChild(el("div", "lag-prev",
           "Last attempt " + when + " — " + s.prev.score + "/100 (" +
-          (VERDICTS[s.prev.verdict] || s.prev.verdict) + ")"));
+          label(VERDICTS, this.labels.verdicts, s.prev.verdict) + ")"));
       }
 
       var ta = el("textarea", "lag-textarea");
@@ -164,10 +172,11 @@ JS = r"""
       var panel = el("div", "lag-feedback");
       var head = el("div", "lag-head");
       head.appendChild(el("span", "lag-badge " + g.verdict,
-        VERDICTS[g.verdict] || g.verdict));
+        label(VERDICTS, this.labels.verdicts, g.verdict)));
       head.appendChild(el("span", "lag-score", g.score + "/100"));
       head.appendChild(el("span", "lag-suggest",
-        "Suggested: " + (RATINGS[g.suggested_rating] || g.suggested_rating)));
+        (this.labels.suggested_prefix || "Suggested: ") +
+        label(RATINGS, this.labels.ratings, g.suggested_rating)));
       panel.appendChild(head);
 
       if (g.corrected_version) {
@@ -204,7 +213,11 @@ def _js_json(obj: Any) -> str:
     return json.dumps(obj, ensure_ascii=False).replace("</", "<\\/")
 
 
-def widget_html(card_id: int, prev_entry: Optional[Dict[str, Any]]) -> str:
+def widget_html(
+    card_id: int,
+    prev_entry: Optional[Dict[str, Any]],
+    labels: Optional[Dict[str, Any]] = None,
+) -> str:
     prev = None
     if prev_entry:
         prev = {
@@ -215,5 +228,6 @@ def widget_html(card_id: int, prev_entry: Optional[Dict[str, Any]]) -> str:
     return (
         f"<style id='lag-style'>{CSS}</style>"
         "<div id='lag-root'></div>"
-        f"<script>{JS}\nLLMGrader.mount({_js_json(card_id)}, {_js_json(prev)});</script>"
+        f"<script>{JS}\nLLMGrader.mount({_js_json(card_id)}, {_js_json(prev)}, "
+        f"{_js_json(labels or {})});</script>"
     )

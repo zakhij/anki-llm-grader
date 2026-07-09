@@ -52,6 +52,12 @@ catch-alls.
   style, e.g. "Ignore missing accents" or "Feedback in German".
 - **show_previous_attempt**: Show a "last attempt" summary line on cards you
   have graded before.
+- **rating_labels** / **verdict_labels**: Override the display text of the
+  suggested rating and the verdict badge — useful if your Anki UI is not in
+  English or you use an add-on that relabels the answer buttons. The
+  suggestion itself always maps to Anki's four fixed answer ease values.
+  Example: `"rating_labels": {"again": "À revoir", "hard": "Difficile",
+  "good": "Correct", "easy": "Facile"}`.
 
 #### Privacy & cost
 

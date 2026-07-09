@@ -34,10 +34,15 @@ def on_card_will_show(text: str, card, kind: str) -> str:
         return text
     if _profile_for(card) is None:
         return text
+    cfg = _config()
     prev = None
-    if _config().get("show_previous_attempt", True):
+    if cfg.get("show_previous_attempt", True):
         prev = history.last_entry(card.nid)
-    return text + webui.widget_html(card.id, prev)
+    labels = {
+        "verdicts": cfg.get("verdict_labels") or {},
+        "ratings": cfg.get("rating_labels") or {},
+    }
+    return text + webui.widget_html(card.id, prev, labels)
 
 
 def on_js_message(handled, message: str, context) -> Any:

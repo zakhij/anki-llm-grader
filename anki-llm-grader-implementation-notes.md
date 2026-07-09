@@ -194,6 +194,16 @@ small local models produce usable feedback. The provider seam is
 `grade(config, profile, fields, attempt) → normalized grading dict` —
 everything above it (bridge, UI, history) is provider-agnostic.
 
+### D16. Rating semantics fixed, display labels configurable (v0.3.1)
+Anki's v3 scheduler (standard on every version we support) always shows four
+answers with fixed ease semantics 1–4 — so the `again/hard/good/easy`
+*categories* are safe to hardcode, and the add-on only ever displays a
+suggestion (it never presses a button). What varies is presentation:
+localized Anki UIs and button-relabeling add-ons show different text. New
+`rating_labels` / `verdict_labels` config maps let users align the displayed
+suggestion text with their UI; the underlying keys stay canonical in the
+schema, history file, and prompt.
+
 ---
 
 ## 3. Architecture
@@ -243,10 +253,13 @@ model text is rendered via `textContent` (no HTML injection from the LLM).
     rendered in the widget
   - `_showAnswer()` flip → widget re-mounted, typed text **and** error state
     preserved
-- ⬜ Real graded response — requires the user's API key (none on this
-  machine). Everything up to and including the HTTP request is verified; the
-  request body follows the documented Messages API shape (structured outputs
-  + adaptive thinking).
+- ✅ **Real graded responses (2026-07-08, after the user added their API
+  key):** a perfect A1 attempt → `correct`, 100/100, `easy`, one idiomatic
+  alternative; a deliberately flawed attempt (missing apostrophe + wrong
+  gender agreement) → `minor_issues`, 70/100, `hard`, both errors caught with
+  precise fixes in the configured French-tutor style. Structured outputs and
+  adaptive thinking accepted by the live API. The system is fully verified
+  end-to-end.
 
 **Generalization (v0.2) test pass:**
 - ✅ Unit tests in Anki's venv: profile matching (FR Prompt precedence,
