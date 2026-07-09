@@ -13,6 +13,7 @@ from aqt.qt import (
     QDialog,
     QDialogButtonBox,
     QFormLayout,
+    QFrame,
     QGroupBox,
     QHBoxLayout,
     QLabel,
@@ -22,6 +23,7 @@ from aqt.qt import (
     QMessageBox,
     QPlainTextEdit,
     QPushButton,
+    QScrollArea,
     QSplitter,
     Qt,
     QVBoxLayout,
@@ -54,7 +56,7 @@ class SettingsDialog(QDialog):
     def __init__(self, parent) -> None:
         super().__init__(parent)
         self.setWindowTitle("LLM Answer Grader Settings")
-        self.setMinimumSize(860, 560)
+        self.setMinimumSize(880, 640)
         self.config = _cfg()
         self.profiles: List[Dict[str, Any]] = [
             dict(p) for p in self.config.get("profiles") or []
@@ -115,7 +117,8 @@ class SettingsDialog(QDialog):
 
         right = QWidget()
         right_l = QVBoxLayout(right)
-        right_l.setContentsMargins(8, 0, 0, 0)
+        right_l.setContentsMargins(8, 0, 8, 0)
+        right_l.setSpacing(8)
 
         name_row = QFormLayout()
         self.name_edit = QLineEdit()
@@ -124,7 +127,8 @@ class SettingsDialog(QDialog):
 
         right_l.addWidget(QLabel("Show the grader on these note types:"))
         self.notetype_list = QListWidget()
-        self.notetype_list.setMaximumHeight(130)
+        self.notetype_list.setMinimumHeight(110)
+        self.notetype_list.setMaximumHeight(150)
         self.notetype_list.itemChanged.connect(self._notetypes_changed)
         right_l.addWidget(self.notetype_list)
         pre_row = QFormLayout()
@@ -140,7 +144,8 @@ class SettingsDialog(QDialog):
             "Card fields to send as context (none checked = all fields):"
         ))
         self.field_list = QListWidget()
-        self.field_list.setMaximumHeight(110)
+        self.field_list.setMinimumHeight(90)
+        self.field_list.setMaximumHeight(120)
         right_l.addWidget(self.field_list)
 
         right_l.addWidget(QLabel(
@@ -153,7 +158,8 @@ class SettingsDialog(QDialog):
             "the learner translates into Spanish. Grade meaning first, then "
             "grammar and naturalness at the level in the 'Level' field."
         )
-        self.instructions_edit.setMinimumHeight(80)
+        self.instructions_edit.setMinimumHeight(90)
+        self.instructions_edit.setMaximumHeight(140)
         right_l.addWidget(self.instructions_edit)
 
         self.override_group = QGroupBox(
@@ -171,8 +177,15 @@ class SettingsDialog(QDialog):
         self.ov_base_url_edit = QLineEdit()
         ov_form.addRow("Base URL:", self.ov_base_url_edit)
         right_l.addWidget(self.override_group)
+        right_l.addStretch(1)
 
-        splitter.addWidget(right)
+        # Scroll area so the editor never squeezes widgets into each other
+        # when the stacked content is taller than the window.
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.Shape.NoFrame)
+        scroll.setWidget(right)
+        splitter.addWidget(scroll)
         splitter.setStretchFactor(0, 1)
         splitter.setStretchFactor(1, 3)
         prof_layout.addWidget(splitter)
