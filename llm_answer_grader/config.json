@@ -16,6 +16,7 @@
       "name": "Example (edit me)",
       "note_type_prefixes": [],
       "card_fields": [],
+      "accent_keyboard": "",
       "grading_instructions": "The card shows a sentence in English (field 'Front') that the learner translates into Spanish. Grade for meaning, grammar and naturalness."
     }
   ]

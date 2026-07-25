@@ -87,6 +87,13 @@ local model for easy decks, Claude for hard ones. And after any grading you
 can ask a **follow-up question** ("why is that wrong?") answered in the
 context of your attempt and the feedback.
 
+Typing on a bare QWERTY? Each profile can enable an optional **accent
+keyboard** (default off), picked from preset layouts — currently French:
+clickable keycaps under the answer box, styled after
+[Lexilogos](https://www.lexilogos.com/keyboard/french.htm) — an uppercase row
+(À Â Æ Ç É È Ê Ë Î Ï Ô Œ Ù Û Ü Ÿ) above the matching lowercase row; a click
+inserts the letter at the cursor.
+
 ## How it works
 
 Card JS can't call external APIs (the webview blocks cross-origin requests),

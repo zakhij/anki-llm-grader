@@ -8,6 +8,13 @@ from __future__ import annotations
 import json
 from typing import Any, Dict, Optional
 
+# Preset accent-keyboard layouts, selectable per profile ("accent_keyboard"
+# names one of these). Lowercase only; the uppercase row is derived. Each
+# mirrors the letter set of the matching lexilogos.com online keyboard.
+KEYBOARD_LAYOUTS = {
+    "french": "àâæçéèêëîïôœùûüÿ",
+}
+
 CSS = """
 #lag-root { margin-top: 1.4em; text-align: left; font-size: 15px; }
 .lag-box { max-width: 620px; margin: 0 auto; padding: 12px 14px; border: 1px solid #d0d0d0;
@@ -18,6 +25,24 @@ CSS = """
   font: inherit; padding: 8px; border: 1px solid #c8c8c8; border-radius: 6px;
   background: #fff; color: inherit; }
 .night_mode .lag-textarea { background: #202024; border-color: #555; }
+/* Keys are <span>s, not <button>s: Anki's reviewer stylesheet restyles every
+   button in the webview (pill radius, padding, margins) and would win over
+   these rules. Spans render exactly as written. */
+.lag-kb { margin: 8px 0 2px; }
+.lag-kb-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px;
+  margin-bottom: 4px; }
+.lag-key { display: inline-block; box-sizing: border-box; width: 30px; height: 30px;
+  margin: 0; padding: 0; font-size: 15px; font-weight: 400; line-height: 28px;
+  text-align: center; color: #c22; background: #eee; border: 1px solid #bbb;
+  border-radius: 6px; box-shadow: 0 1px 1px rgba(0,0,0,.18); cursor: pointer;
+  user-select: none; -webkit-user-select: none; }
+.lag-key:hover { background: #fff; }
+.lag-key:active { background: #ddd; box-shadow: none; transform: translateY(1px); }
+.lag-key.disabled { opacity: .45; pointer-events: none; }
+.lag-key-ghost { visibility: hidden; }
+/* Keycaps stay light in night mode, like lexilogos' dark theme. */
+.night_mode .lag-key { background: #e8e8e8; border-color: #999; color: #c22; }
+.night_mode .lag-key:hover { background: #fff; }
 .lag-controls { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
 .lag-btn { font: inherit; font-size: 14px; padding: 6px 14px; border-radius: 6px;
   border: none; background: #4a68d8; color: #fff; cursor: pointer; }
@@ -90,10 +115,13 @@ JS = r"""
                      fuStatus: "idle" };
     },
 
-    mount: function (cardId, prev, labels) {
+    mount: function (cardId, prev, labels, keyboard) {
       if (!this.state || this.state.cardId !== cardId) this.reset(cardId);
       this.state.prev = prev;
       this.labels = labels || {};
+      this.keyboard = keyboard
+        ? Array.from(keyboard).filter(function (c) { return c.trim(); })
+        : null;
       this.render();
     },
 
@@ -156,6 +184,52 @@ JS = r"""
       if (root && active && root.contains(active)) active.blur();
     },
 
+    // Optional accent keyboard, lexilogos-style: keycap buttons under the
+    // answer box, uppercase row above the matching lowercase row. Click
+    // inserts at the cursor. mousedown is suppressed so the focused input
+    // keeps focus and caret while clicking keys.
+    buildKeyboard: function () {
+      var self = this;
+      var grading = this.state.status === "grading";
+      var kb = el("div", "lag-kb");
+
+      function key(ch, ghost) {
+        var cls = "lag-key" + (ghost ? " lag-key-ghost" : "")
+                            + (grading ? " disabled" : "");
+        var b = el("span", cls, ch);
+        b.addEventListener("mousedown", function (e) { e.preventDefault(); });
+        b.addEventListener("click", function () { self.insertChar(ch); });
+        return b;
+      }
+
+      var upper = el("div", "lag-kb-row");
+      var lower = el("div", "lag-kb-row");
+      var hasUpper = false;
+      this.keyboard.forEach(function (ch) {
+        var up = ch.toUpperCase();
+        // Caseless chars (punctuation…) get an invisible placeholder in the
+        // upper row so the case pairs stay column-aligned.
+        upper.appendChild(key(up, up === ch));
+        if (up !== ch) hasUpper = true;
+        lower.appendChild(key(ch, false));
+      });
+      if (hasUpper) kb.appendChild(upper);
+      kb.appendChild(lower);
+      return kb;
+    },
+
+    insertChar: function (ch) {
+      var t = this._kbTarget;
+      if (!t || t.disabled || !document.contains(t)) return;
+      var start = t.selectionStart == null ? t.value.length : t.selectionStart;
+      var end = t.selectionEnd == null ? start : t.selectionEnd;
+      t.value = t.value.slice(0, start) + ch + t.value.slice(end);
+      var pos = start + ch.length;
+      t.focus();
+      t.setSelectionRange(pos, pos);
+      t.dispatchEvent(new Event("input"));  // sync widget state
+    },
+
     render: function () {
       var root = document.getElementById("lag-root");
       var s = this.state;
@@ -175,6 +249,8 @@ JS = r"""
       ta.placeholder = "Type your answer…";
       ta.value = s.text;
       ta.disabled = s.status === "grading";
+      this._kbTarget = ta;
+      ta.addEventListener("focus", function () { self._kbTarget = ta; });
       ta.addEventListener("input", function () { s.text = ta.value; });
       ["keydown", "keyup", "keypress"].forEach(function (evt) {
         ta.addEventListener(evt, function (e) {
@@ -188,6 +264,10 @@ JS = r"""
         });
       });
       box.appendChild(ta);
+
+      if (this.keyboard && this.keyboard.length) {
+        box.appendChild(this.buildKeyboard());
+      }
 
       var controls = el("div", "lag-controls");
       var btn = el("button", "lag-btn",
@@ -230,6 +310,7 @@ JS = r"""
       input.placeholder = "Ask about this grading… (e.g. why is that wrong?)";
       input.value = s.fuQuestion;
       input.disabled = s.fuStatus === "asking";
+      input.addEventListener("focus", function () { self._kbTarget = input; });
       input.addEventListener("input", function () { s.fuQuestion = input.value; });
       ["keydown", "keyup", "keypress"].forEach(function (evt) {
         input.addEventListener(evt, function (e) {
@@ -300,6 +381,7 @@ def widget_html(
     card_id: int,
     prev_entry: Optional[Dict[str, Any]],
     labels: Optional[Dict[str, Any]] = None,
+    keyboard: Optional[str] = None,
 ) -> str:
     prev = None
     if prev_entry:
@@ -312,5 +394,5 @@ def widget_html(
         f"<style id='lag-style'>{CSS}</style>"
         "<div id='lag-root'></div>"
         f"<script>{JS}\nLLMGrader.mount({_js_json(card_id)}, {_js_json(prev)}, "
-        f"{_js_json(labels or {})});</script>"
+        f"{_js_json(labels or {})}, {_js_json(keyboard)});</script>"
     )

@@ -43,6 +43,11 @@ Each entry in **profiles** targets some of your cards:
   English. Judge meaning first; minor article mistakes are acceptable."*
 - **card_fields**: Which note fields to send as context (e.g.
   `["Front", "Level"]`). Empty list = all fields.
+- **accent_keyboard**: Name of a preset accent keyboard to show under this
+  profile's answer box, or `""` for none (the default). Currently available:
+  `"french"` — À Â Æ Ç É È Ê Ë Î Ï Ô Œ Ù Û Ü Ÿ over the matching lowercase
+  row, lexilogos-style; a click inserts the letter at the cursor.
+  Per-profile, so your French deck can have one while other decks don't.
 
 The **first** matching profile wins, so put more specific prefixes before
 catch-alls.

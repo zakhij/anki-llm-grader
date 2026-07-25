@@ -59,7 +59,8 @@ def on_card_will_show(text: str, card, kind: str) -> str:
         if kind not in ("reviewQuestion", "reviewAnswer"):
             return text
         cfg = _config()
-        if grader.match_profile(cfg, card.note().note_type()["name"]) is None:
+        profile = grader.match_profile(cfg, card.note().note_type()["name"])
+        if profile is None:
             return text
         prev = None
         if cfg.get("show_previous_attempt", True):
@@ -68,7 +69,16 @@ def on_card_will_show(text: str, card, kind: str) -> str:
             "verdicts": cfg.get("verdict_labels") or {},
             "ratings": cfg.get("rating_labels") or {},
         }
-        return text + webui.widget_html(card.id, prev, labels)
+        # Per-profile layout name; a pre-v0.5 global/boolean "accent_keyboard"
+        # still counts for profiles that haven't been saved with their own
+        # value. Unknown names just mean no keyboard.
+        kb_name = profile.get("accent_keyboard", cfg.get("accent_keyboard"))
+        if kb_name is True:
+            kb_name = "french"
+        keyboard = None
+        if isinstance(kb_name, str):
+            keyboard = webui.KEYBOARD_LAYOUTS.get(kb_name.strip().lower())
+        return text + webui.widget_html(card.id, prev, labels, keyboard)
     except Exception:
         _note_config_error()
         return text

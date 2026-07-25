@@ -30,7 +30,14 @@ from aqt.qt import (
     QWidget,
 )
 
+from .webui import KEYBOARD_LAYOUTS
+
 ADDON = __name__.split(".")[0]
+
+KEYBOARD_ITEMS = [("(none)", "")] + [
+    (f"{name.title()} — {' '.join(chars)}", name)
+    for name, chars in KEYBOARD_LAYOUTS.items()
+]
 
 PROVIDER_ITEMS = [
     ("Claude (Anthropic)", "anthropic"),
@@ -162,6 +169,15 @@ class SettingsDialog(QDialog):
         self.instructions_edit.setMaximumHeight(140)
         right_l.addWidget(self.instructions_edit)
 
+        kb_row = QHBoxLayout()
+        kb_row.addWidget(QLabel("Accent keyboard under the answer box:"))
+        self.kb_box = QComboBox()
+        for label, _ in KEYBOARD_ITEMS:
+            self.kb_box.addItem(label)
+        kb_row.addWidget(self.kb_box)
+        kb_row.addStretch(1)
+        right_l.addLayout(kb_row)
+
         self.override_group = QGroupBox(
             "Override model for this profile (e.g. a cheaper/local model)"
         )
@@ -276,7 +292,8 @@ class SettingsDialog(QDialog):
         )
         enabled = self._current_row is not None
         for w in (self.name_edit, self.notetype_list, self.prefix_edit,
-                  self.field_list, self.instructions_edit, self.override_group):
+                  self.field_list, self.instructions_edit, self.kb_box,
+                  self.override_group):
             w.setEnabled(enabled)
 
         self.name_edit.setText(p.get("name") or "")
@@ -295,6 +312,16 @@ class SettingsDialog(QDialog):
         self.prefix_edit.setText(", ".join(custom))
 
         self.instructions_edit.setPlainText(p.get("grading_instructions") or "")
+
+        # Pre-v0.5 forms (global toggle, boolean true) read as "french" so an
+        # existing setup keeps its keyboard until saved with an explicit value.
+        kb = p.get("accent_keyboard", self.config.get("accent_keyboard"))
+        if kb is True:
+            kb = "french"
+        kb = kb.strip().lower() if isinstance(kb, str) else ""
+        self.kb_box.setCurrentIndex(next(
+            (i for i, (_, v) in enumerate(KEYBOARD_ITEMS) if v == kb), 0
+        ))
 
         has_override = any(
             p.get(k) for k in ("provider", "model", "openai_base_url")
@@ -374,6 +401,12 @@ class SettingsDialog(QDialog):
             if self.field_list.item(i).checkState() == Qt.CheckState.Checked
         ]
         p["grading_instructions"] = self.instructions_edit.toPlainText().strip()
+        layout = KEYBOARD_ITEMS[self.kb_box.currentIndex()][1]
+        if layout:
+            p["accent_keyboard"] = layout
+        else:
+            p.pop("accent_keyboard", None)
+        p.pop("accent_keyboard_chars", None)  # dropped free-form key
         for key in ("provider", "model", "openai_base_url"):
             p.pop(key, None)
         if self.override_group.isChecked():
@@ -395,6 +428,9 @@ class SettingsDialog(QDialog):
         cfg["model"] = self.model_edit.text().strip() or cfg.get("model") or ""
         if self.base_url_edit.text().strip():
             cfg["openai_base_url"] = self.base_url_edit.text().strip()
+        # Legacy pre-v0.5 keys: toggle is per-profile now, layouts are presets.
+        cfg.pop("accent_keyboard", None)
+        cfg.pop("accent_keyboard_chars", None)
         cfg["profiles"] = self.profiles
         mw.addonManager.writeConfig(ADDON, cfg)
         self.accept()

@@ -233,6 +233,33 @@ JSON was the most error-prone setup step; pickers eliminate it. The dialog
 only manages the keys it shows — everything else (prompts, labels) survives
 untouched; "Edit raw JSON…" remains for full control.
 
+### D20. Optional accent keyboard, per profile, preset layouts (v0.5)
+Off by default. `accent_keyboard` is a **profile** key naming a preset
+layout from `webui.KEYBOARD_LAYOUTS` (currently just `"french"`), picked
+from a dropdown in the profile editor — profiles are the per-deck/
+per-language unit, and presets instead of a free-form character field keep
+the config foolproof (adding a language later = one dict entry). Unknown
+names fail open to no keyboard. Pre-v0.5 forms in user config (global
+toggle, boolean `true`) are read as `"french"` until the next settings
+save, which normalizes/drops the legacy keys. Keys are `<span>`s, NOT
+`<button>`s: Anki's reviewer stylesheet restyles every button in the
+webview (pill radius, padding, margins), which bloated the first version's
+keys into oversized circles that wrapped mid-row; spans render exactly as
+our CSS says (30px caps, 16 per row fits the 620px box). When on,
+`webui.py` renders lexilogos-style keycaps under the answer
+textarea — centered rows of light square keys with red letters (kept light
+in night mode, like lexilogos' own dark theme), the uppercase row above the
+matching lowercase row, no shift mechanism (both cases always visible,
+mirroring the real lexilogos layout). Click inserts at the caret via
+`selectionStart`/`setSelectionRange`; `toUpperCase()` derives the upper row
+(œ→Œ, ÿ→Ÿ correct), and caseless chars get an invisible placeholder so
+columns stay aligned. Keys suppress `mousedown` default so the focused input
+keeps focus and caret; insertion targets whichever input was focused last
+(answer box or follow-up field) and fires a synthetic `input` event so
+widget state stays in sync. Character set is one config string
+(`accent_keyboard_chars`, default `àâæçéèêëîïôœùûüÿ`) — swap it for other
+languages.
+
 ---
 
 ## 3. Architecture
