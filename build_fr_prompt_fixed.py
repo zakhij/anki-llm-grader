@@ -1,7 +1,11 @@
 import genanki
 
-MODEL_ID = 1651073200
+# Unique id + name per build script (see build_fr_translate_batch3.py for
+# the note-type-renaming mess that shared ids caused).
+MODEL_ID = 1651073203
 DECK_ID = 1651073202
+
+CARD_CSS = ".card { font-family: arial; font-size: 20px; text-align: center; color: black; background-color: white; padding: 20px; }"
 
 model = genanki.Model(
     MODEL_ID,
@@ -17,6 +21,7 @@ model = genanki.Model(
             "afmt": "{{FrontSide}}",
         }
     ],
+    css=CARD_CSS,
 )
 
 def card(level, prompt, constraints):

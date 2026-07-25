@@ -1,11 +1,16 @@
 import genanki
 
-MODEL_ID = 1651073200
+# Unique id + name per build script (see build_fr_translate_batch3.py for
+# the note-type-renaming mess that shared ids caused). The name keeps the
+# "FR Translate" prefix so existing grader profiles still match.
+MODEL_ID = 1651073221
 DECK_ID = 1651073220
+
+CARD_CSS = ".card { font-family: arial; font-size: 20px; text-align: center; color: black; background-color: white; padding: 20px; }"
 
 model = genanki.Model(
     MODEL_ID,
-    "FR Translate",
+    "FR Translate QA",
     fields=[
         {"name": "Text"},
         {"name": "Level"},
@@ -17,6 +22,7 @@ model = genanki.Model(
             "afmt": "{{FrontSide}}",
         }
     ],
+    css=CARD_CSS,
 )
 
 cards = [

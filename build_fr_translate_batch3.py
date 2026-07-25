@@ -1,7 +1,17 @@
 import genanki
 
+# NOTE: every build script must use a UNIQUE model id AND model name.
+# All four scripts originally shared id 1651073200; each import then
+# name-clashed with an existing note type and Anki minted a renamed
+# "FR Translate+" copy — hence the +…+++++++ ladder in the collection.
+# This id is kept because the collection's main note type (the 234-card
+# "FR Translate+++++++") was created by this script's import.
 MODEL_ID = 1651073200
 DECK_ID = 1651073210
+
+# Match the styling of the hand-fixed note types; without a css= argument
+# genanki ships an unstyled model (left-aligned, browser-default font).
+CARD_CSS = ".card { font-family: arial; font-size: 20px; text-align: center; color: black; background-color: white; padding: 20px; }"
 
 model = genanki.Model(
     MODEL_ID,
@@ -17,6 +27,7 @@ model = genanki.Model(
             "afmt": "{{FrontSide}}",
         }
     ],
+    css=CARD_CSS,
 )
 
 cards = [
