@@ -39,6 +39,10 @@ suggested Again/Hard/Good/Easy).
 
 ## Install
 
+**From AnkiWeb (easiest):** in Anki, Tools → Add-ons → **Get Add-ons…** and
+paste the code **`365951175`**
+([listing](https://ankiweb.net/shared/info/365951175)).
+
 **From file:** download `llm_answer_grader.ankiaddon` from the
 [latest release](https://github.com/zakhij/anki-llm-grader/releases), then in
 Anki: Tools → Add-ons → Install from file.

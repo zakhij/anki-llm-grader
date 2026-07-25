@@ -1,8 +1,12 @@
 # AnkiWeb listing — copy-paste kit
 
-Upload page: https://ankiweb.net/shared/addons → **Upload** (requires an
-AnkiWeb account). Attach the `.ankiaddon` from the latest GitHub release —
-**as-is; it's already a zip, don't re-zip it**.
+**Published:** https://ankiweb.net/shared/info/365951175 — add-on ID
+`365951175`, first published 2026-07-09.
+
+**To update:** open the listing while signed in → **Update** (bottom of the
+page) → in the upload form, choose the `.ankiaddon` from the latest GitHub
+release — **as-is; it's already a zip, don't re-zip it** — then Save. Same
+listing, same ID; never create a second listing.
 
 - **Title:** `LLM Answer Grader — type your answer, get graded by AI`
 - **Support page:** your GitHub repo issues URL (flip the repo public first),
@@ -38,7 +42,7 @@ AnkiWeb account). Attach the `.ankiaddon` from the latest GitHub release —
 <p>Desktop only (add-ons don't run on AnkiDroid/AnkiMobile; cards behave normally there). API usage is billed to your own key — typically a fraction of a cent per graded card, or free with a local model. Source: AGPL-3.0.</p>
 ```
 
-**Pre-upload checklist:**
-- [ ] Flip the GitHub repo public (or create a forums.ankiweb.net support thread)
+**Per-update checklist:**
 - [ ] Test-install the `.ankiaddon` from the release into a clean profile
-- [ ] After upload, note the assigned add-on ID and add it to the README
+- [ ] Bump the branch max version if a newer Anki was tested
+- [ ] Update the listing description if the release added user-visible features

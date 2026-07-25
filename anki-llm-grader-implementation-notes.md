@@ -378,4 +378,6 @@ model text is rendered via `textContent` (no HTML injection from the LLM).
 - Streaming feedback rendering (nice-to-have; SSE over `requests`).
 - Optional auto-rating (explicitly out of scope for v1).
 - A "history browser" dialog (Tools menu) over `user_files/history.json`.
-- AnkiWeb packaging (`.ankiaddon` zip) if ever published.
+- ~~AnkiWeb packaging (`.ankiaddon` zip) if ever published.~~ Published:
+  add-on ID `365951175` (2026-07-09). Updates = re-upload into the same
+  listing (see `docs/ankiweb-listing.md`).
