@@ -20,22 +20,33 @@ listing, same ID; never create a second listing.
   it from your account) — never create a second listing, or you'll mint a
   new add-on ID and strand existing users.
 
-**Description (HTML is allowed on AnkiWeb):**
+**Description (HTML is allowed on AnkiWeb; screenshots are hotlinked from
+this repo's `docs/screenshots/`, so re-pushing updated images under the same
+names updates the listing automatically):**
 
 ```html
 <b>Type your answer on the card, get it graded by an LLM — inline, before you rate.</b>
 
 <p>Built for language production practice (translations, free writing), and for any card where "compare my answer" needs judgment instead of exact string matching.</p>
 
+<img src="https://raw.githubusercontent.com/zakhij/anki-llm-grader/main/docs/screenshots/03-graded.png">
+
 <ul>
 <li>A text box appears on cards you choose (matched by note type)</li>
 <li>Submit with Ctrl/Cmd+Enter → verdict, 0–100 score, corrected version, specific error feedback, alternative phrasings, and a suggested Again/Hard/Good/Easy rating</li>
 <li><b>Ask follow-up questions</b> about any grading ("why is that wrong?") — answered in the context of your attempt</li>
+<li>Optional <b>accent keyboard</b> per profile (French: à â æ ç é è …) for typing accents on a bare QWERTY</li>
 <li>Your text and feedback stay on screen when you flip to the answer; you still pick the rating</li>
 <li>Attempt history is stored locally; cards show your last attempt's score</li>
 </ul>
 
+<p>Ask a follow-up about any grading and get a grounded answer before you rate:</p>
+
+<img src="https://raw.githubusercontent.com/zakhij/anki-llm-grader/main/docs/screenshots/05-followup-answer.png">
+
 <p><b>Easy setup:</b> a visual settings dialog (Tools → LLM Answer Grader Settings) with note-type and field pickers — no JSON editing required (raw config remains available for power users).</p>
+
+<img src="https://raw.githubusercontent.com/zakhij/anki-llm-grader/main/docs/screenshots/01-settings.png">
 
 <p><b>Bring your own model:</b> Claude (default, best grading quality), or any OpenAI-compatible endpoint — OpenAI, OpenRouter, Groq, or a fully local &amp; private Ollama / LM Studio server (no card content ever leaves your machine). Different decks can use different models: e.g. a free local model for easy cards, Claude for hard ones.</p>
 
