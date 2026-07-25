@@ -37,6 +37,31 @@ and move on. You still choose the rating; the grader just tells you what it
 thinks (verdict, 0–100 score, corrected version, specific errors, and a
 suggested Again/Hard/Good/Easy).
 
+## Example flow
+
+Set up once — pick a provider, paste a key, point a profile at your note
+types:
+
+<img src="docs/screenshots/01-settings.png" width="720" alt="Settings dialog: provider, API key, and a grading profile with note-type and field pickers">
+
+Matched cards get an answer box (here with the optional French accent
+keyboard enabled for the profile):
+
+<img src="docs/screenshots/02-card-input.png" width="720" alt="Card in the reviewer with a text input and clickable accent keyboard">
+
+Type your attempt, hit ⌘/Ctrl+Enter. Mixing up « hier » and « demain »
+flips the meaning — caught, scored, corrected:
+
+<img src="docs/screenshots/03-graded.png" width="720" alt="Graded attempt: Needs work 45/100, suggested Again, better version and specific feedback">
+
+Not convinced? Ask about the grading…
+
+<img src="docs/screenshots/04-followup-question.png" width="720" alt="Typing a follow-up question about the grading">
+
+…and get a grounded answer, inline, before you rate the card:
+
+<img src="docs/screenshots/05-followup-answer.png" width="720" alt="Follow-up answer explaining the nuance, shown above the rating buttons">
+
 ## Install
 
 **From AnkiWeb (easiest):** in Anki, Tools → Add-ons → **Get Add-ons…** and
