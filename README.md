@@ -1,41 +1,12 @@
 # LLM Answer Grader — Anki add-on
 
-MY EXPERIMENT WITH CLAUDE FABLE!! THIS WAS ALL FABLE.
+NOTE: THIS WAS ALL FABLE. :) 
 
-Type your answer on a flashcard, get it graded by Claude, right inside the
-Anki reviewer. Built for language production practice (translations, free
-writing), but works for anything where "compare my answer to the card" needs
-judgment instead of string matching.
+Type your answer, get it graded by AI, right inside the Anki reviewer. Built for language learning in mind, but supports any Anki flow that benefits from an LLM judge.
 
-```
-┌──────────────────────────────────────────┐
-│  It is cold today. I want a hot coffee.  │
-│                 [A1]                     │
-│  ┌────────────────────────────────────┐  │
-│  │ Il fait froid aujourd'hui. Je veux │  │
-│  │ boire un café chaud.               │  │
-│  └────────────────────────────────────┘  │
-│  [Grade with Claude]  ⌘/Ctrl+Enter       │
-│  ────────────────────────────────────    │
-│  ● Correct   96/100   Suggested: Easy    │
-│  BETTER VERSION                          │
-│  Il fait froid aujourd'hui. J'ai envie   │
-│  d'un café bien chaud.                   │
-│  FEEDBACK                                │
-│  • « je veux boire » is fine at A1;      │
-│    « j'ai envie de » is more natural.    │
-└──────────────────────────────────────────┘
-```
+## Why / Background
 
-## Why
-
-The usual loop — see card, write your answer somewhere, paste it into a
-chatbot with "grade my translation", read the feedback, switch back to Anki,
-rate the card — works, but the context switching is brutal. This add-on
-collapses it: input field on the card, one keystroke, feedback inline, rate
-and move on. You still choose the rating; the grader just tells you what it
-thinks (verdict, 0–100 score, corrected version, specific errors, and a
-suggested Again/Hard/Good/Easy).
+I have an Anki deck dedicated to learning French. Specifically, for translating English sentences into French. My original workflow would be: open the card in Anki, type the sentence into a website that supports a French keyboard, paste the card + my answer to Claude for review, then swtich back to Anki to finally rate the card. This add-on collapses that tab switching and makes it so I never have to leave Anki.
 
 ## Example flow
 
